@@ -2,10 +2,5 @@
 __pycache__/
 .venv/
 
-# AI and Reports (User Requested Exclusions)
-report/
-overleaf_export/
-.antigravity/
-
 # Ignore large raw archives (exceeds GitHub 100MB limit)
 *.zip
