@@ -1,0 +1,24 @@
+# AUV Underwater Object Detection Dataset Configuration
+
+path: C:/Users/Anna/.antigravity/David3/CMPE401_IDP1_V2_DM/data
+train: 
+  - Gate Task/train/images
+  - front/train/images
+val: 
+  - Gate Task/valid/images
+  - front/val/images
+test: 
+  - Gate Task/test/images
+  - front/test/images
+
+# Classes
+nc: 8
+names:
+  0: swordfish
+  1: shark
+  2: Gate
+  3: Dark Pole
+  4: Light Pole
+  5: Torpedo Hole Swordfish
+  6: Torpedo Hole Shark
+  7: Torpedo Target

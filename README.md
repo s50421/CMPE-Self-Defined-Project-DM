@@ -1,113 +1,102 @@
-# CMPE 401: Advanced Object Detection with YOLOv11
+<div align="center">
+  <h1>Deep Learning-Based Underwater Object Detection for AUVs</h1>
+  <p><strong>CMPE 401: Deep Learning for Engineers (Self-Defined Final Project)</strong></p>
+  <p><strong>Author:</strong> David Manhart</p>
 
-**Author:** David Manhart  
-**Course:** CMPE 401 - Deep Learning for Engineers  
+  ![Pipeline Status](https://img.shields.io/badge/Pipeline-Passing-success)
+  ![mAP50](https://img.shields.io/badge/mAP50-0.926-blue)
+  ![FPS](https://img.shields.io/badge/Speed-286_FPS-green)
+  ![Framework](https://img.shields.io/badge/PyTorch-2.6.0-red)
+</div>
 
-## Project Executive Summary
-This repository serves as a comprehensive exploration of modern real-time object detection using the VisDrone dataset. Rather than simply training a model, this project is structured to critically analyze deep learning training dynamics, diagnose convergence issues, and iteratively improve performance through controlled experiments. The final deliverable includes a systematic cross-generational comparison of the YOLO architecture family (YOLOv5 to YOLOv11).
+<br>
 
----
-
-## Part I & II – Baseline Training and Convergence Analysis
-
-The foundation of our experimentation begins with training a lightweight architecture (YOLO11 Nano) on the complex VisDrone dataset. By plotting the resulting loss curves, we can accurately diagnose the model's bias-variance tradeoff.
-
-**Model:** YOLO11n | **Resolution:** 640px | **Epochs:** 20
-
-**Training vs Validation Loss:**
-![Baseline Convergence](results/yolo11n_20e/custom_loss_curve.png)
-
-**Convergence Diagnosis:**
-The validation loss shows a steady decline throughout the 20 epochs without displaying the characteristic "U-shape" associated with overfitting. Given that the VisDrone dataset consists of highly complex, dense urban environments with extremely small object sizes, the YOLO11 Nano model (with only ~2.6M parameters) struggles to extract sufficient feature representations in a limited timeframe. The loss curve's continuous downward trajectory suggests the model is currently **underfitting** due to insufficient training duration rather than lacking the theoretical capacity to learn the dataset.
+<div align="center">
+  <img src="results/okmr_final_deployment/final_visual_comparison.png" alt="Final Model Output vs Ground Truth" width="80%">
+  <p><em>Figure 1: Ground Truth (Left) vs. YOLO11s ONNX Predictions (Right). The model successfully handles severe subsea visual degradation.</em></p>
+</div>
 
 ---
 
-## Part III – Structured Experimental Design
+## Project Objective
+This repository contains an end-to-end, deep learning-based computer vision pipeline engineered specifically for **Autonomous Underwater Vehicles (AUVs)**. Operating in subsea environments introduces severe visual degradation—including light attenuation, non-linear color distortion, and high turbidity—which render traditional heuristic computer vision techniques obsolete.
 
-To systematically isolate variables affecting model performance, we conduct controlled experiments focusing on **Training Duration** and **Network Capacity**.
+The primary objective is to demonstrate real-world morphological detection: classifying marine life and subsea infrastructure by structural features. This includes distinguishing between highly similar biological targets (e.g., `swordfish` vs `shark`) and identifying navigation markers (e.g., `Gate`). This pipeline bridges the gap between deep learning theory and the strict hardware-constrained realities of edge computing, inspired directly by the competitive tasks undertaken by the **UBC Okanagan Marine Robotics Club (OKMR)**.
 
-### Phase A: Investigating Training Duration
-| Architecture | Epochs | mAP50 | mAP50-95 | Precision | Recall |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| YOLO11n | 20 | 0.267 | 0.150 | 0.409 | 0.291 |
-| YOLO11n | 50 | 0.294 | 0.165 | 0.420 | 0.325 |
-
-*Empirical Analysis:* 
-Extending the epoch count from 20 to 50 significantly improved all performance metrics. The mAP50 increased by roughly 10% (from 0.267 to 0.294), and recall saw a substantial jump from 0.291 to 0.325. This confirms the diagnosis from Part II: the complex nature of the VisDrone dataset requires extended gradient descent steps for a lightweight model to converge properly. Prolonged training mitigated underfitting without triggering overfitting.
-
-### Phase B: Investigating Network Capacity
-| Architecture | Epochs | mAP50 | mAP50-95 | Precision | Recall |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| YOLO11n | 20 | 0.267 | 0.150 | 0.409 | 0.291 |
-| YOLO11s | 20 | 0.357 | 0.206 | 0.489 | 0.370 |
-
-*Empirical Analysis:* 
-Scaling the parameters from the Nano (2.58M) to Small (9.42M) variant resulted in a massive performance boost. Precision jumped from 0.409 to 0.489, and mAP50 increased from 0.267 to 0.357. The added depth and width of the "Small" architecture provided the necessary representational capacity to capture the dense, minute objects inherent to VisDrone.
+## Evolution from the Instructor-Defined Project
+This work originated from the CMPE 401 Instructor-Defined Project (IDP), which focused on detecting urban objects from aerial drones using the VisDrone dataset. While the IDP provided a strong foundation in deep learning workflows, this Self-Defined Project pivots to address the challenges of domain adaptation, data sparsity, and strict latency requirements. The repository has been streamlined into an empirical pipeline optimized for deployment on low-power AUV hardware (e.g., NVIDIA Jetson Nano).
 
 ---
 
-## Part IV – Iterative Model Improvement
+## Key Findings and Results
 
-Based on the hypotheses generated in Part III, we initiate a controlled improvement cycle.
+Through a rigorous iterative experimentation strategy evaluating network capacity (YOLO11n vs YOLO11s) against input tensor resolution (640px vs 320px), the optimal model architecture was determined to be **YOLO11s at 640px resolution**.
 
-- **Initial State (Baseline):** YOLO11n trained for 20 epochs exhibited signs of under-convergence.
-- **Controlled Intervention:** We aggressively extended the training schedule to 50 epochs while keeping all regularization and batch hyperparameters constant.
-- **Outcome Evaluation:** 
-  ![YOLO11n 50 Epochs Loss](results/yolo11n_50e/custom_loss_curve.png)
-- **Final Conclusion:** The complex urban topology of VisDrone requires prolonged gradient descent steps. The 50-epoch cycle successfully deepened the loss minimum. The validation loss continued to decrease and stabilize, confirming that increasing training duration is a highly effective, theory-driven intervention to mitigate underfitting on dense datasets.
+### Final Deployment Metrics:
+- **Accuracy:** `0.926 mAP50` (Vastly exceeding the >0.85 project requirement).
+- **Speed:** `286.2 FPS` via ONNX graph optimization (Exceeding the >30 FPS real-time edge requirement).
 
----
-
-## Part V – Multi-Generational YOLO Comparison
-
-To evaluate architectural advancements in the YOLO family, we freeze the training parameters (10 Epochs, 640px) and evaluate four distinct generational models. 
-
-| Generation | Architecture | Params | mAP50 | mAP50-95 | Precision | Recall |
-| :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **YOLOv11** | YOLO11s | 9,416,670 | 0.331 | 0.191 | 0.462 | 0.351 |
-| **YOLOv11** | YOLO11n | 2,584,102 | 0.237 | 0.133 | 0.358 | 0.276 |
-| **YOLOv8**  | YOLOv8n | 3,007,598 | 0.234 | 0.131 | 0.351 | 0.276 |
-| **YOLOv5**  | YOLOv5n | 2,504,894 | 0.214 | 0.117 | 0.320 | 0.261 |
-
-*(Raw data available in `/xsheets/compiled_results.csv`)*
-
-### Comparative Insights
-1. **Architectural Evolution:** When controlling for training time (10 epochs) and model scale (Nano), YOLO11n outperforms its predecessors. YOLO11n achieves an mAP50 of 0.237, slightly edging out YOLOv8n (0.234) despite having ~400k fewer parameters, and heavily outperforming YOLOv5n (0.214). This demonstrates the superior feature extraction capabilities of the modern C2PSA spatial attention modules introduced in YOLO11.
-2. **Speed vs Accuracy Tradeoff:** While YOLO11s dominates the performance metrics (0.331 mAP50), it requires nearly 4x the parameters of the Nano variants. For edge-deployment on physical drones where latency and power consumption are critical, YOLO11n provides the best balance of speed and precision.
-3. **Loss Curve Behavior (10 Epochs):**
-   * YOLOv5n: ![v5n](results/yolov5n_10e/custom_loss_curve.png)
-   * YOLOv8n: ![v8n](results/yolov8n_10e/custom_loss_curve.png)
-   * YOLO11n: ![11n](results/yolo11n_10e/custom_loss_curve.png)
-   * YOLO11s: ![11s](results/yolo11s_10e/custom_loss_curve.png)
-
-*Observation:* Across all generational models, 10 epochs is insufficient for full convergence on VisDrone. However, the YOLO11 models exhibit significantly steeper initial loss descents compared to YOLOv5n, indicating more efficient gradient propagation early in the training cycle.
+<div align="center">
+  <img src="results/exp3_yolo11s_25e/custom_loss_curve.png" alt="Training Convergence" width="48%">
+  <img src="results/okmr_final_deployment/BoxPR_curve.png" alt="Precision Recall Curve" width="48%">
+  <p><em>Figure 2: (Left) Stable Training/Validation Loss Convergence over 25 epochs. (Right) Precision-Recall curve demonstrating high precision across all 8 subsea classes.</em></p>
+</div>
 
 ---
 
-## Part VI – Final Challenge Model (Competition Submission)
+## Repository Structure
+```text
+CMPE401_IDP1_V2_DM/
+├── data/                       # Configuration (dataset.yaml) & scripts for unpacking data
+├── src/
+│   ├── config.py               # Centralized parameters and hardware allocation
+│   ├── train.py                # Core PyTorch training loop
+│   ├── run_experiments.py      # Automated suite that trains 4 distinct models for validation
+│   ├── evaluate.py             # Metric extraction tool
+│   ├── inference.py            # Script for testing the model on raw underwater footage
+│   ├── visualize_comparison.py # Generates Ground Truth vs Prediction plots
+│   └── final_pipeline.py       # Master script: Trains, validates criteria, and exports to ONNX
+├── report/                     # Contains the comprehensive IEEEtran Academic Report (.tex & .pdf)
+├── overleaf_export/            # Flat folder containing the report and all graphics for Overleaf
+└── results/                    # Generated loss curves, weights (.pt / .onnx), and metrics
+```
 
-To exceed expectations and field the top-performing model against the `testset-challenge`, we synthesized the findings from our rigorous experimental analysis to determine the absolute "Best Combination":
+---
 
-- **Design Choice 1 (Model Capacity):** Part III Phase B proved that scaling from Nano to the **YOLO11 Small (s)** architecture yielded massive precision gains (0.409 to 0.489). The added depth and width are strictly necessary to detect VisDrone's dense, minute objects.
-- **Design Choice 2 (Training Duration):** Part IV demonstrated that a lightweight model heavily underfits at 20 epochs on this complex dataset. Extending the training cycle to **50 Epochs** deepened the loss minimum and stabilized validation metrics across the board.
+## Setup and Reproduction
 
-Therefore, our final, competition-ready model is **YOLO11s trained for 50 epochs**.
+### 1. Environment
+Ensure you have a CUDA-capable GPU (though CPU fallback is supported) and are utilizing a Python virtual environment.
+```bash
+pip install -r requirements.txt
+```
 
-### Competition Submission Protocol
-The VisDrone `testset-challenge` is a blind dataset (ground-truth labels are deliberately withheld). Therefore, local mAP calculations are impossible.
+### 2. Dataset Preparation
+The project expects YOLO-formatted data. If you have the raw zip archives (e.g., `Gate Task.zip` and `front.zip`), place them in the root directory and run:
+```bash
+python data/setup_data.py
+```
+This automatically extracts, structures, and normalizes the class indices into `data/`.
 
-For the final competition grading:
-1. **The Model Weights:** The final trained `best.pt` model is attached to this submission.
-2. **Prediction Files:** Inference has been run on the `testset-challenge` images, and the bounding box predictions have been exported as `.txt` files (located in `results/competition_predictions/labels/`).
+### 3. Running the Empirical Experiments
+Deep learning requires empirical proof. You can reproduce the exact learning process documented in the Final Report by kicking off the automated experimental suite. This runs a Baseline (Nano), a Capacity Check (Small), a Convergence Run, and an Edge Optimization (320px) run.
+```bash
+python src/run_experiments.py
+```
 
-### Estimated Real-World Performance
-To provide a baseline understanding of how the model will perform in the blind challenge, we evaluated the final model on the publicly available `test-dev` split:
+### 4. Visual Comparison and Inference
+To visually verify the model's accuracy, you can generate a side-by-side comparison of human-annotated Ground Truth boxes versus the YOLO Predictions:
+```bash
+python src/visualize_comparison.py
+```
+To run inference on the raw test images:
+```bash
+python src/inference.py
+```
 
-*(Run `python src/train_final.py` to train the model and automatically generate these final scores)*
-
-| Model | Epochs | Dataset Split | mAP50 | mAP50-95 | Precision | Recall |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11s (Final)** | 50 | `test-dev` | 0.312 | 0.181 | 0.444 | 0.346 |
-
-*Final Conclusion:*
-When evaluating our ultimate configuration against the unseen `test-dev` proxy dataset, the model achieved a highly robust mAP50 of 0.312 and a Precision of 0.444. These test metrics correlate strongly with our validation metrics from Phase B, confirming that the model successfully generalizes to unseen environments without catastrophic overfitting. The combination of the deeper `Small` architecture alongside the extended 50-epoch training cycle proved to be the optimal design choice for the dense, complex nature of the VisDrone dataset.
+### 5. The Final Deployment Pipeline
+Once the optimal parameters were determined from the experiments, they were hardcoded into the final deployment script. This script automatically trains the definitive model, verifies it against the OKMR engineering success criteria, and exports the `.onnx` artifact for the AUV team to physically deploy:
+```bash
+python src/final_pipeline.py
+```
+Everything required for physical hardware deployment is neatly packaged into `results/okmr_final_deployment/`.

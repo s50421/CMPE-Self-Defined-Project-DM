@@ -1,7 +1,7 @@
 """
 Centralized Configuration for YOLO Training
 
-This file allows you to easily tweak all important variables from one place.
+This file allows easy tweaking of all important variables.
 """
 
 import os
@@ -10,12 +10,18 @@ import os
 # Ensures results always save inside the project folder, regardless of where you run the script from
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+
+import torch
 
 # --- Hardware Acceleration ---
-# Use '0' for CUDA GPU acceleration on Windows/Linux.
-# Use 'cpu' if you want to run it without the GPU.
-DEVICE = "0" 
-WORKERS = 8  # Number of data loading threads. 8 is usually optimal for good computers.
+# Auto-detect CUDA. If not available (e.g. forgot to activate venv), fallback to CPU.
+if torch.cuda.is_available():
+    DEVICE = "0" 
+else:
+    print("[WARNING] CUDA not detected! Falling back to CPU. If you have a GPU, ensure your virtual environment is active.")
+    DEVICE = "cpu"
+WORKERS = 2  # Reduced to 2 to prevent RAM overloads
 
 # --- Fast First-Round Training Settings ---
 # To make training very fast, you can:
@@ -27,4 +33,4 @@ IMG_SIZE = 640       # Increased from 416 for better small object detection
 
 # --- Model & Dataset ---
 MODEL_NAME = "yolo11n.pt"   # YOLOv11 Nano (Fastest model)
-DATASET = "VisDrone.yaml"   # Built-in VisDrone config
+DATASET = os.path.join(DATA_DIR, "dataset.yaml")   # Underwater AUV dataset config

@@ -1,0 +1,13 @@
+names:
+- pointed_nose
+- round_nose
+nc: 2
+roboflow:
+  license: CC BY 4.0
+  project: gate_robosub-5vkn2
+  url: https://universe.roboflow.com/auv-tupvw/gate_robosub-5vkn2/dataset/2
+  version: 2
+  workspace: auv-tupvw
+test: ../test/images
+train: ../train/images
+val: ../valid/images

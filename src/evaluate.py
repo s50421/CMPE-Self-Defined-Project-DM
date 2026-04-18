@@ -6,6 +6,7 @@ evaluates every model it finds, and dumps everything into a nice CSV file for my
 
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
 from ultralytics import YOLO
 import config
 
@@ -14,7 +15,7 @@ def format_row(cols):
     return "| " + " | ".join(cols) + " |"
 
 def evaluate_all():
-    print("\n=== CMPE 401: Automated Model Evaluation ===")
+    print("\n=== CMPE 401 Self-Defined Project: Automated Model Evaluation ===")
     
     # Bail out if the results directory doesn't exist yet
     if not os.path.exists(config.RESULTS_DIR):
@@ -49,7 +50,7 @@ def evaluate_all():
             # Run evaluation on the validation set. 
             metrics = model.val(data=config.DATASET, device=config.DEVICE)
             
-            # Extract the core metrics I need for the rubric
+            # Extract the core metrics I need for the report
             map50_95 = metrics.box.map
             map50 = metrics.box.map50
             
@@ -60,6 +61,11 @@ def evaluate_all():
             # Count the total number of parameters in the model (useful for size comparisons)
             params = sum(p.numel() for p in model.model.parameters())
             
+            # Calculate Inference Speed (FPS)
+            speed_dict = metrics.speed
+            total_ms_per_img = sum(speed_dict.values())
+            fps = 1000.0 / total_ms_per_img if total_ms_per_img > 0 else 0
+            
             # Append it to my dataset
             results_data.append({
                 "Run Name": run,
@@ -67,7 +73,8 @@ def evaluate_all():
                 "mAP50": f"{map50:.3f}",
                 "mAP50-95": f"{map50_95:.3f}",
                 "Precision": f"{precision:.3f}",
-                "Recall": f"{recall:.3f}"
+                "Recall": f"{recall:.3f}",
+                "Inference FPS": f"{fps:.1f}"
             })
             
         except Exception as e:
@@ -96,6 +103,26 @@ def evaluate_all():
     csv_path = os.path.join(xsheets_dir, "compiled_results.csv")
     df.to_csv(csv_path, index=False)
     print(f"\n[SUCCESS] Saved the compiled CSV to: {csv_path}")
+    
+    # 3. Generate the Inference Speed (FPS) Plot
+    try:
+        plt.figure(figsize=(10, 6))
+        run_names = df["Run Name"].tolist()
+        fps_values = [float(x) for x in df["Inference FPS"]]
+        
+        plt.bar(run_names, fps_values, color='skyblue', edgecolor='black')
+        plt.title("Performance Criteria: Inference Speed (FPS)", fontsize=14)
+        plt.ylabel("Frames Per Second (Higher is Better)", fontsize=12)
+        plt.xlabel("Experimental Runs", fontsize=12)
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        
+        plot_path = os.path.join(config.RESULTS_DIR, "inference_speed_comparison.png")
+        plt.savefig(plot_path)
+        print(f"[INFO] Saved FPS comparison plot to: {plot_path}")
+        plt.close()
+    except Exception as e:
+        print(f"[WARNING] Could not generate FPS plot: {e}")
 
 if __name__ == "__main__":
     evaluate_all()
